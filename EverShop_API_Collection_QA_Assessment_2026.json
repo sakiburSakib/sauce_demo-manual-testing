@@ -1,0 +1,467 @@
+{
+  "info": {
+    "_postman_id": "evershop-qa-assessment-2026",
+    "name": "EverShop QA Assessment — API Tests",
+    "description": "Postman collection for Q4 Happy Path Journey API testing against https://demo.evershop.io\n\nPrepared by: QA Engineer\nDate: May 01, 2026\nAssessment: Q4 [40 Marks] — API + UI Happy Path Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://demo.evershop.io", "type": "string" },
+    { "key": "auth_token", "value": "", "type": "string", "description": "Auto-set by Login test" },
+    { "key": "product_uuid", "value": "", "type": "string", "description": "Auto-set by Search test" },
+    { "key": "product_uuid_2", "value": "", "type": "string", "description": "Second product UUID" },
+    { "key": "cart_item_id", "value": "", "type": "string", "description": "Auto-set by Add to Cart test" },
+    { "key": "customer_email", "value": "qatest_evershop@example.com", "type": "string" },
+    { "key": "customer_password", "value": "Test@1234", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "Customer registration and login flows",
+      "item": [
+        {
+          "name": "API-12 — Register New Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has customer data', function () { var json = pm.response.json(); pm.expect(json).to.have.property('data'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customer_email}}\",\n  \"password\": \"{{customer_password}}\",\n  \"full_name\": \"QA Tester EverShop\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/customers/register", "host": ["{{base_url}}"], "path": ["api", "customers", "register"] },
+            "description": "Register a new customer account for testing.\n\nExpected: 200 OK with customer UUID\nActual: 200 OK — PASS\n\nBug: None"
+          }
+        },
+        {
+          "name": "API-13 — Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JWT token received', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('token');",
+                  "  pm.collectionVariables.set('auth_token', json.data.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customer_email}}\",\n  \"password\": \"{{customer_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/customers/login", "host": ["{{base_url}}"], "path": ["api", "customers", "login"] },
+            "description": "Login with registered customer. Stores JWT token in collection variable.\n\nExpected: 200 OK with JWT token\nActual: 200 OK — PASS"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Product Search",
+      "description": "Search product endpoints for Nike React happy path",
+      "item": [
+        {
+          "name": "API-01 — Search Products (Short Keyword: Nike react)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Products array returned', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data.items).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test('First product UUID captured', function () {",
+                  "  var json = pm.response.json();",
+                  "  if (json.data.items && json.data.items.length > 0) {",
+                  "    pm.collectionVariables.set('product_uuid', json.data.items[0].uuid);",
+                  "    if (json.data.items.length > 1) {",
+                  "      pm.collectionVariables.set('product_uuid_2', json.data.items[1].uuid);",
+                  "    }",
+                  "  }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?query=Nike react&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "query", "value": "Nike react" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Search products using short keyword 'Nike react'.\n\nExpected: 200 OK, array of matching Nike products\nActual: 200 OK — PASS\n\nTest Case Mapping: TC-033, API-01"
+          }
+        },
+        {
+          "name": "API-02 — Search Products (Full Keyword: Nike react phantom run flyknit 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Products array returned', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data.items).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?query=Nike react phantom run flyknit 2&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "query", "value": "Nike react phantom run flyknit 2" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Search products using full product name keyword.\n\nExpected: 200 OK, matching Nike React Phantom products\nActual: 200 OK — PASS\n\nTest Case Mapping: TC-032, API-02"
+          }
+        },
+        {
+          "name": "API-03 — Get Product Detail by UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Product detail returned', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('name');",
+                  "  pm.expect(json.data).to.have.property('price');",
+                  "  pm.expect(json.data).to.have.property('variants');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_uuid}}"]
+            },
+            "description": "Get detailed product info by UUID captured from search results.\n\nExpected: 200 OK with product name, price, variants (size/color options)\nActual: 200 OK — PASS\n\nTest Case Mapping: API-03"
+          }
+        },
+        {
+          "name": "API-04 — GraphQL Product Search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('GraphQL data returned', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('data');",
+                  "  pm.expect(json.errors).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ products(filter: { name: { value: \\\"Nike react\\\", op: like } }) { items { uuid name price { regular { value text } } sku } } }\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/graphql", "host": ["{{base_url}}"], "path": ["api", "graphql"] },
+            "description": "GraphQL query to search products by name 'Nike react'.\n\nExpected: 200 OK with products data array, no errors field\nActual: 200 OK — PASS\n\nTest Case Mapping: API-04"
+          }
+        },
+        {
+          "name": "API-14 — Filter Products by Color+Size [NEGATIVE — BUG-006]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('[BUG-006] Expected 200 OK for filter endpoint — got 404', function () {",
+                  "  // This test documents a known bug: filter by attributes returns 404",
+                  "  // Expected: 200 with filtered products",
+                  "  // Actual: 404 Not Found",
+                  "  pm.expect(pm.response.code).to.equal(404);",
+                  "  console.log('BUG-006 CONFIRMED: API attribute filter endpoint returns 404');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?filter=color:black&size=small",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "filter", "value": "color:black" },
+                { "key": "size", "value": "small" }
+              ]
+            },
+            "description": "NEGATIVE TEST — Filter products by color and size attributes.\n\nExpected: 200 OK with products where color=Black AND size=Small\nActual: 404 Not Found\n\nBUG: BUG-006 — API product filter endpoint for attributes is not implemented\nSeverity: Medium\n\nTest Case Mapping: API-14"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Cart Operations",
+      "description": "Add to cart, retrieve, update, and remove items",
+      "item": [
+        {
+          "name": "API-05 — Add First Nike React Product (Small, Black)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Cart item ID captured', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('uuid');",
+                  "  pm.collectionVariables.set('cart_item_id', json.data.uuid);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_uuid}}\",\n  \"qty\": 1,\n  \"variant\": {\n    \"size\": \"Small\",\n    \"color\": \"Black\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/cart/items", "host": ["{{base_url}}"], "path": ["api", "cart", "items"] },
+            "description": "Add first Nike React product (Small size, Black color) to cart.\n\nHappy Path — Q4 TC-039\nExpected: 200 OK, cart item created with correct variant\nActual: 200 OK — PASS"
+          }
+        },
+        {
+          "name": "API-06 — Add Second Nike React Product (Small, Black)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Second item added to cart', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('uuid');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_uuid_2}}\",\n  \"qty\": 1,\n  \"variant\": {\n    \"size\": \"Small\",\n    \"color\": \"Black\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/cart/items", "host": ["{{base_url}}"], "path": ["api", "cart", "items"] },
+            "description": "Add second Nike React product (Small size, Black color) to cart.\n\nHappy Path — Q4 TC-040\nExpected: 200 OK, second cart item created\nActual: 200 OK — PASS"
+          }
+        },
+        {
+          "name": "API-07 — Get Cart Contents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Cart has 2 items', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data.items).to.have.lengthOf(2);",
+                  "});",
+                  "pm.test('Cart items are Small Black Nike React', function () {",
+                  "  var json = pm.response.json();",
+                  "  json.data.items.forEach(function(item) {",
+                  "    pm.expect(item.product.name).to.include('Nike');",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": { "raw": "{{base_url}}/api/cart", "host": ["{{base_url}}"], "path": ["api", "cart"] },
+            "description": "Retrieve cart and verify it contains exactly 2 Nike React items (Small, Black).\n\nHappy Path — Q4 TC-041, TC-042\nExpected: 200 OK, cart with 2 items, correct variants\nActual: 200 OK — PASS"
+          }
+        },
+        {
+          "name": "API-08 — GraphQL Cart Query",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('GraphQL cart data returned', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('cart');",
+                  "  pm.expect(json.errors).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ cart { items { uuid qty product { name sku } options { label value } } subTotal { value text } grandTotal { value text } } }\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/graphql", "host": ["{{base_url}}"], "path": ["api", "graphql"] },
+            "description": "GraphQL query to retrieve full cart details including product options (size/color).\n\nExpected: 200 OK with cart items, subtotal, grandTotal\nActual: 200 OK — PASS\n\nTest Case Mapping: API-08"
+          }
+        },
+        {
+          "name": "API-09 — Update Cart Item Quantity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Quantity updated to 2', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data.qty).to.equal(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"qty\": 2\n}" },
+            "url": { "raw": "{{base_url}}/api/cart/items/{{cart_item_id}}", "host": ["{{base_url}}"], "path": ["api", "cart", "items", "{{cart_item_id}}"] },
+            "description": "Update quantity of first cart item from 1 to 2.\n\nExpected: 200 OK, item qty updated, subtotal recalculated\nActual: 200 OK — PASS\n\nTest Case Mapping: API-09"
+          }
+        },
+        {
+          "name": "API-10 — Remove Item from Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Item removed successfully', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('status').that.equals('removed');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{auth_token}}" }],
+            "url": { "raw": "{{base_url}}/api/cart/items/{{cart_item_id}}", "host": ["{{base_url}}"], "path": ["api", "cart", "items", "{{cart_item_id}}"] },
+            "description": "Remove first cart item by ID.\n\nExpected: 200 OK, item removed from cart\nActual: 200 OK — PASS\n\nTest Case Mapping: API-10"
+          }
+        },
+        {
+          "name": "API-11 — Add to Cart WITHOUT Variant [NEGATIVE — BUG-005]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('[BUG-005] Should return 400 — got 200 (Server validation missing)', function () {",
+                  "  // This documents BUG-005: API accepts cart item without variant (should reject with 400)",
+                  "  // Expected: 400 Bad Request with validation error message",
+                  "  // Actual: 200 OK — item added without variant selected",
+                  "  pm.expect(pm.response.code).to.equal(400);",
+                  "  console.log('BUG-005 CONFIRMED: API allows cart item without variant - no server-side validation');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_uuid}}\",\n  \"qty\": 1\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/cart/items", "host": ["{{base_url}}"], "path": ["api", "cart", "items"] },
+            "description": "NEGATIVE TEST — Attempt to add product to cart WITHOUT selecting a variant.\n\nExpected: 400 Bad Request with message 'Please select product options'\nActual: 200 OK — Item added with no variant (BUG)\n\nBUG: BUG-005 — Missing server-side variant validation\nSeverity: High\n\nTest Case Mapping: API-11"
+          }
+        }
+      ]
+    }
+  ]
+}
