@@ -15,4 +15,9 @@ Manual Testing of Sauce Demo website based on some specific questions of test ca
 - Bug Reporting on Problem User end.
 - Bug Reporting on Landing/ Home page of products.
 
+## Author
+**Sakibur Rahman**
+
+QA / SQA Testing Portfolio
+
   
